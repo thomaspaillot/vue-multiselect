@@ -17,10 +17,11 @@ function includes (str, query) {
   return text.indexOf(query.trim()) !== -1
 }
 
-function filterOptions (options, search, label, customLabel) {
+function filterOptions (options, search, label, customLabel, filteredOptionsSort) {
+  const sortFunction = filteredOptionsSort ? filteredOptionsSort : (a, b) => customLabel(a, label).length - customLabel(b, label).length;
   return search ? options
     .filter((option) => includes(customLabel(option, label), search))
-    .sort((a, b) => customLabel(a, label).length - customLabel(b, label).length) : options
+    .sort(sortFunction) : options
 }
 
 function stripGroups (options) {
@@ -42,7 +43,7 @@ function flattenOptions (values, label) {
     }, [])
 }
 
-function filterGroups (search, label, values, groupLabel, customLabel) {
+function filterGroups (search, label, values, groupLabel, customLabel, filteredOptionsSort) {
   return (groups) =>
     groups.map((group) => {
       /* istanbul ignore else */
@@ -50,7 +51,7 @@ function filterGroups (search, label, values, groupLabel, customLabel) {
         console.warn(`Options passed to vue-multiselect do not contain groups, despite the config.`)
         return []
       }
-      const groupOptions = filterOptions(group[values], search, label, customLabel)
+      const groupOptions = filterOptions(group[values], search, label, customLabel, filteredOptionsSort)
 
       return groupOptions.length
         ? {
@@ -81,6 +82,14 @@ export default {
     internalSearch: {
       type: Boolean,
       default: true
+    },
+    /**
+     * Custom sort function used to sort the filtered options.
+     * @type {Boolean}
+     */
+    filteredOptionsSort: {
+      type: Function,
+      default: null
     },
     /**
      * Array of available options: Objects, Strings or Integers.
@@ -347,7 +356,7 @@ export default {
       if (this.internalSearch) {
         options = this.groupValues
           ? this.filterAndFlat(options, normalizedSearch, this.label)
-          : filterOptions(options, normalizedSearch, this.label, this.customLabel)
+          : filterOptions(options, normalizedSearch, this.label, this.customLabel, this.filteredOptionsSort)
       } else {
         options = this.groupValues ? flattenOptions(this.groupValues, this.groupLabel)(options) : options
       }
@@ -421,7 +430,7 @@ export default {
      */
     filterAndFlat (options, search, label) {
       return flow(
-        filterGroups(search, label, this.groupValues, this.groupLabel, this.customLabel),
+        filterGroups(search, label, this.groupValues, this.groupLabel, this.customLabel, this.filteredOptionsSort),
         flattenOptions(this.groupValues, this.groupLabel)
       )(options)
     },
