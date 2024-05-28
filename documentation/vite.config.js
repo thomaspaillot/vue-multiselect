@@ -6,6 +6,10 @@ export default {
   define: {
     '__APP_VERSION__': JSON.stringify(process.env.npm_package_version)
   },
+  build: {
+    outDir: '../docs/'
+  },
+  base: '',
   resolve: {
     alias: {
       'vue-multiselect': path.resolve(__dirname, '../src')
